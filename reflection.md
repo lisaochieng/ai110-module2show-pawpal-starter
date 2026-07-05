@@ -2,15 +2,30 @@
 
 ## 1. System Design
 
+**Core user actions**
+
+The three main things a user can do in PawPal+:
+
+1. Add a pet (name, species/breed) so the app knows who the plan is for.
+2. Add care tasks for that pet, each with a duration and priority (walk, feeding, meds, etc.).
+3. Generate and view today's plan, which orders the tasks by priority and available time.
+
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+I went with four classes:
+
+- **Owner** — the person using the app. Holds their name, daily time budget (`available_minutes`), and their list of pets. Responsible for adding pets.
+- **Pet** — the animal being cared for. Holds name, species/breed, and its own list of tasks. Responsible for adding and removing its tasks.
+- **Task** — one care activity (walk, feeding, meds, etc.). Holds a name, duration, priority, and optional preferred time / recurrence. Knows whether it recurs.
+- **Scheduler** — the brains. Takes a pet and the time budget and produces the ordered daily plan, and can explain how it ordered things.
+
+I used dataclasses for Owner, Pet, and Task since they're mostly data holders, and kept Scheduler a regular class because it does the real work.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+After reviewing the skeleton I made one change to the Scheduler. Originally `explain()` took no arguments and the Scheduler kept no state, so once `generate_plan()` returned there was nothing left to explain. I added `last_plan` and `last_skipped` attributes that `generate_plan()` records, so `explain()` can describe both what got scheduled and what got dropped for lack of time. This also matches the scenario's "skip tasks if time runs out" behavior, since skipped tasks are now tracked instead of silently disappearing.
+
+A second review pointed out that `priority` is stored as a free-form string, so sorting by it directly would order tasks alphabetically ("high", "low", "medium") instead of by importance. I added a `PRIORITY_ORDER` mapping and a `Task.priority_rank()` helper so the scheduler has a well-defined value to sort on. I made the ranking explicit in the design rather than leaving it as a hidden assumption in the scheduling code.
 
 ---
 
