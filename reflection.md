@@ -33,13 +33,25 @@ A second review pointed out that `priority` is stored as a free-form string, so 
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler considers three constraints, in this order of influence:
+
+1. **Priority** (`Task.priority_rank()` via the `PRIORITY_ORDER` map) — high tasks are placed before medium and low.
+2. **Available time** (`Owner.available_minutes`) — `generate_plan()` greedily packs tasks until the budget runs out and records anything that doesn't fit in `last_skipped` rather than dropping it silently.
+3. **Preferred time** (`preferred_time`, "HH:MM") — used for chronological ordering (`sort_by_time()`) and for spotting clashes (`detect_conflicts()`).
+
+Priority mattered most because the scenario is about a *busy* owner: when there isn't enough time for everything, the important tasks (meds, feeding) should survive and the optional ones (grooming) should be the ones skipped.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+**Conflict detection only checks for *exact* time matches, not overlapping durations.** `detect_conflicts()` groups tasks by their exact `"HH:MM"` `preferred_time` and warns when two share a slot. It does **not** notice that a 30-minute walk at 08:00 overlaps a feeding at 08:15 — only two tasks both stamped `08:00` are flagged.
+
+This tradeoff is reasonable here because:
+
+- **It's lightweight and never crashes.** It returns a plain list of warning strings (empty when clean), so the UI can surface a gentle "heads up" without interval math or error handling.
+- **The data doesn't justify more.** Most tasks are entered on round times (08:00, 09:00), so exact-match catches the realistic collisions a pet owner actually creates.
+- **It degrades safely.** A missed overlap just means one un-warned clash — the plan is still produced and the owner can eyeball the times. Pretending to enforce a hard constraint we don't actually check would be worse than an honest, simple one.
+
+If the app grew (vet visits, precise time blocks), the natural next step is to parse `preferred_time` into minutes and compare `[start, start + duration)` intervals — but that adds parsing and edge cases (e.g. midnight rollover) the current scenario doesn't need.
 
 ---
 
