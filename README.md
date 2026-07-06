@@ -75,19 +75,48 @@ Skipped 1 task(s) that didn't fit the time budget:
 
 ## 🧪 Testing PawPal+
 
+Run the full suite from the project root with:
+
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+> Use `python -m pytest` (not bare `pytest`) so the repo root is on
+> `sys.path` and the tests can import `pawpal_system`.
+
+### What the tests cover
+
+The suite in `tests/test_pawpal.py` (26 tests) verifies every "smarter
+scheduling" behavior, covering both happy paths and edge cases:
+
+- **Basics** — `mark_complete()` flips status; `Pet.add_task()` grows the list and tags the task with its pet name.
+- **Sorting** (`sort_by_time`) — chronological order, untimed tasks sort last, empty list is safe, and the input list is not mutated.
+- **Filtering** (`filter_tasks`) — by pet name (case-insensitive), by completion status, both combined with AND, and no-criteria returns all.
+- **Recurrence** (`next_occurrence` / `complete_task`) — daily → +1 day, weekly → +7 days, non-recurring returns `None`, the completed task stays as history, and **month/year rollovers** (Jul 31 → Aug 1, Dec 31 → Jan 1) are correct.
+- **Conflict detection** (`detect_conflicts`) — flags same-time clashes within one pet and across pets, no false positives on unique times, and ignores untimed tasks.
+- **Planning** (`generate_plan`) — a pet with no tasks yields an empty plan (no crash), and the low-priority task is the one skipped when time runs out.
+
+### Successful test run
 
 ```
-# Paste your pytest output here
+============================= test session starts =============================
+platform win32 -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: ai110-module2show-pawpal-starter
+plugins: anyio-4.14.1
+collected 26 items
+
+tests/test_pawpal.py ..........................                          [100%]
+
+============================= 26 passed in 0.04s ==============================
 ```
+
+### Confidence level
+
+**⭐⭐⭐⭐☆ (4 / 5)** — All 26 tests pass, covering every scheduling feature
+plus the tricky edge cases (empty task lists, date rollovers, untimed tasks).
+I held back the fifth star because conflict detection only checks exact time
+matches, not overlapping durations (see `reflection.md` §2b), and there are no
+tests yet for the Streamlit UI layer in `app.py`.
 
 ## 📐 Smarter Scheduling
 
