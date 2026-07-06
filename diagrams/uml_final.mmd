@@ -1,0 +1,55 @@
+classDiagram
+    %% PawPal+ FINAL class design - matches pawpal_system.py after Phases 3-4
+    %% (sorting, filtering, recurring tasks, and conflict detection).
+
+    class Owner {
+        +str name
+        +int available_minutes
+        +list~Pet~ pets
+        +add_pet(pet) void
+        +all_tasks() list~Task~
+    }
+
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +list~Task~ tasks
+        +add_task(task) void
+        +remove_task(task) void
+        +pending_tasks() list~Task~
+        +complete_task(task, today) Task
+    }
+
+    class Task {
+        +str name
+        +int duration
+        +str priority
+        +str preferred_time
+        +str recurrence
+        +bool completed
+        +str pet_name
+        +date due_date
+        +is_recurring() bool
+        +priority_rank() int
+        +mark_complete() void
+        +next_occurrence(today) Task
+    }
+
+    class Scheduler {
+        +int available_minutes
+        +list~Task~ last_plan
+        +list~Task~ last_skipped
+        +list~str~ last_conflicts
+        +generate_plan(tasks) list~Task~
+        +sort_by_time(tasks) list~Task~
+        +filter_tasks(tasks, completed, pet_name) list~Task~
+        +detect_conflicts(tasks) list~str~
+        +explain() str
+    }
+
+    Owner "1" --> "*" Pet : owns
+    Pet "1" --> "*" Task : has
+    Pet ..> Task : creates next occurrence
+    Scheduler ..> Task : sorts, filters, plans, checks conflicts
+    Owner ..> Scheduler : supplies tasks + time budget

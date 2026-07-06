@@ -22,6 +22,31 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## ✨ Features
+
+PawPal+ is more than a task list — the `Scheduler` applies real algorithms to
+turn a pile of tasks into a sensible daily plan:
+
+- **Priority-based planning** — greedily packs the day's tasks by priority
+  (high → low), fits them within the owner's time budget, and reports anything
+  that had to be skipped (`Scheduler.generate_plan`).
+- **Sorting by time** — orders tasks chronologically from their `"HH:MM"`
+  preferred time, with untimed tasks placed last (`Scheduler.sort_by_time`).
+- **Filtering** — narrows the task list by pet (case-insensitive) and/or
+  completion status (`Scheduler.filter_tasks`).
+- **Conflict warnings** — flags when two tasks (same pet or different pets)
+  are booked for the same time slot, returning a friendly warning instead of
+  crashing (`Scheduler.detect_conflicts`).
+- **Daily / weekly recurrence** — completing a recurring task automatically
+  schedules its next occurrence (daily → +1 day, weekly → +7 days) while
+  keeping the finished one as history (`Task.next_occurrence` +
+  `Pet.complete_task`).
+- **Plan explanations** — a plain-language summary of what was scheduled,
+  what was skipped, and why (`Scheduler.explain`).
+
+See [Smarter Scheduling](#-smarter-scheduling) below for the method-by-method
+details, and `diagrams/uml_final.mmd` for the class design.
+
 ## Getting started
 
 ### Setup
@@ -170,12 +195,73 @@ marking done and adding the new occurrence to the pet's list.
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### What the UI lets you do
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+Launch the app with `streamlit run app.py`. From the single-page interface a
+pet owner can:
+
+- **Set their profile** — name and how many minutes they have for pet care today.
+- **Add pets** — name, species, optional breed.
+- **Add tasks** to a chosen pet — title, duration, priority, an optional
+  `"HH:MM"` preferred time, and a repeat setting (none / daily / weekly).
+- **View, filter, and sort tasks** — a live table with dropdowns to filter by
+  pet or completion status and to sort by time or entry order.
+- **See conflict warnings** — a yellow banner appears the moment two tasks share
+  a time slot, naming the clash and suggesting a fix.
+- **Mark tasks done** — completing a recurring task instantly schedules its next
+  occurrence and confirms the new date.
+- **Generate today's schedule** — a prioritized, time-boxed plan in a clean
+  table, a list of anything skipped for lack of time, and a "Why this plan?"
+  explanation.
+
+### Example workflow
+
+1. Enter your name and set "Time available today" to `90` minutes.
+2. Add a pet: **Mochi**, a dog.
+3. Add a task for Mochi: **Morning walk**, 30 min, high priority, time `08:00`,
+   repeat **daily**.
+4. Add another: **Meds**, 5 min, high priority, time `08:00`.
+5. The task table updates and a **conflict warning** appears — both tasks are at
+   08:00.
+6. Mark "Morning walk" done — the app confirms the next daily walk is scheduled
+   for tomorrow.
+7. Click **Generate schedule** to see the prioritized plan for today.
+
+### Key Scheduler behaviors on display
+
+- **Sorting** — the task table's "Sort by → Time" option calls
+  `Scheduler.sort_by_time`, putting `08:00` before `09:00` and untimed tasks last.
+- **Filtering** — the pet/status dropdowns call `Scheduler.filter_tasks`.
+- **Conflict warnings** — the banner is driven by `Scheduler.detect_conflicts`.
+- **Recurrence** — "Mark done" calls `Pet.complete_task`, which uses
+  `Task.next_occurrence` to roll the task to its next date.
+
+### Sample CLI output (`python main.py`)
+
+The same logic can be exercised from the terminal. Running `python main.py`
+prints the sorted/filtered task views, a conflict warning, a recurrence demo,
+and the final plan:
+
+```
+Conflict detection (detect_conflicts):
+--------------------------------------
+  Conflict at 08:00: 2 tasks booked together - Morning walk (Biscuit), Medication (Miso)
+
+Completed 'Morning walk'. Auto-created next occurrence: Morning walk due 2026-07-07
+
+================================================
+  Today's Schedule for Lisa
+  Time available: 90 min
+================================================
+  1. [08:00] Medication       5 min  (high  ) - Miso
+  2. [08:30] Feeding         10 min  (high  ) - Biscuit (recur.: daily)
+  3. [09:00] Feeding         10 min  (high  ) - Miso (recur.: daily)
+  4. [08:00] Morning walk    30 min  (high  ) - Biscuit (recur.: daily) due 2026-07-07
+  5. [  -  ] Litter box      15 min  (medium) - Miso
+------------------------------------------------
+  Skipped (not enough time):
+    - Grooming (45 min, low)
+================================================
+```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

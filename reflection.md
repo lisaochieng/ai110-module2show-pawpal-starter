@@ -59,13 +59,34 @@ If the app grew (vet visits, precise time blocks), the natural next step is to p
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I leaned on my AI assistant differently in each phase. Early on it was a
+sounding board for the class design; later it was more of a pair-programmer for
+writing methods, drafting tests, and untangling errors.
+
+The features that helped most were the ones where it could actually see my
+files. Pointing it at `pawpal_system.py` and asking targeted questions ("sort
+these HH:MM strings with a lambda key," "what edge cases should I test") gave me
+much better answers than vague ones. Having it run the code and tests and read
+the output itself caught things I would've missed — like a Windows-only crash
+where an emoji in my conflict warning couldn't print in the terminal.
+
+Splitting the work into **separate chat sessions per phase** kept me organized.
+The planning session stayed about algorithms, the implementation session about
+code, and the testing session about edge cases. When a chat only holds one
+kind of context, it stops drifting and its suggestions stay on-topic.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+I didn't take everything the AI offered. When we looked at `detect_conflicts`,
+it suggested a shorter `defaultdict` + comprehension version. It was more
+"Pythonic," but harder to read at a glance, so I kept my explicit loop — same
+O(n) speed, easier for a human to follow. Keeping the design clean mattered
+more to me than saving three lines.
+
+I verified suggestions by running them, not by trusting them. Every method got
+exercised in `main.py` and then locked in with tests (`python -m pytest`), and
+for the date math I used fixed dates so I could check the rollovers (Jul 31 →
+Aug 1) myself instead of assuming they were right.
 
 ---
 
@@ -73,13 +94,27 @@ If the app grew (vet visits, precise time blocks), the natural next step is to p
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I wrote 26 tests covering all four scheduling behaviors: sorting (chronological
+order, untimed tasks last, empty list, no mutation), filtering (by pet, by
+status, combined), recurrence (daily/weekly, non-recurring returns nothing, and
+month/year rollovers), and conflict detection (same-time clashes, no false
+positives, untimed tasks ignored). I also tested the plain planner — an empty
+pet and the low-priority task getting skipped when time runs out.
+
+These mattered because the recurrence and conflict logic are the parts most
+likely to break quietly. A wrong date or a missed clash wouldn't crash the app,
+it would just give the owner a bad plan, so I wanted tests watching for exactly
+that.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+Fairly confident — 4 out of 5. All 26 tests pass and they cover the tricky edge
+cases, so I trust the backend logic. I held back the last point because
+conflict detection only catches exact time matches, not overlapping durations,
+and I haven't written any tests for the Streamlit UI in `app.py` yet.
+
+If I had more time I'd test overlapping-duration conflicts (a 30-min walk at
+08:00 vs a feeding at 08:15) and add a couple of smoke tests for the app.
 
 ---
 
@@ -87,12 +122,19 @@ If the app grew (vet visits, precise time blocks), the natural next step is to p
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I'm most happy with the recurrence feature. Figuring out that the date math
+belonged on `Task` but the "add it to the list" part belonged on `Pet` felt
+like a real design decision, and it worked cleanly once I split it that way.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+I'd upgrade conflict detection to compare actual time ranges instead of just
+exact matches, and I'd give tasks a proper date/time type instead of a plain
+`"HH:MM"` string so I'm not relying on string sorting.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+Working with AI is fastest when I stay in charge of the design. It's great at
+producing options and catching bugs, but I got the best results when I decided
+*what* I wanted, gave it the files, and then checked its work by running it —
+not when I let it decide the structure for me.
